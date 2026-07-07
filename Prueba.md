@@ -73,25 +73,24 @@ pip install -r requirements.txt
 
 ## Proceso replicable paso a paso
 
-> **Preparación:** copiar el PDF a procesar y los scripts a una misma carpeta
-> de trabajo (los scripts detectan el `.pdf` de la **carpeta actual**). La
-> carpeta `JSONObtenidos/` se crea sola en el paso 1. Todos los comandos se
-> ejecutan desde esa carpeta de trabajo.
+Antes de empezar: copiar el PDF a procesar y los scripts a una misma carpeta
+de trabajo, porque los scripts buscan el `.pdf` en la carpeta actual. La
+carpeta `JSONObtenidos/` se crea sola en el paso 1. Todos los comandos se
+corren desde esa carpeta.
 
-### Paso 1 — Extracción cruda con `opendataloader_pdf`
+### Paso 1 — Extracción cruda con opendataloader_pdf
 
 ```bash
 python 1_extraer_pdf_opendataloader.py
 ```
 
-Si hay un solo PDF en la carpeta lo detecta automáticamente; si hay varios,
-muestra un menú numerado para elegir (también se puede pasar como argumento:
-`python 1_extraer_pdf_opendataloader.py PLAN_3952-DSOF_1067.pdf`).
+Si hay un solo PDF en la carpeta lo detecta solo. Si hay varios, muestra un
+menú numerado para elegir. También se le puede pasar el archivo directamente:
+`python 1_extraer_pdf_opendataloader.py PLAN_3952-DSOF_1067.pdf`.
 
-**Salida esperada:** `JSONObtenidos/<nombre_pdf>.json` (todo el contenido
-detectado: headings, paragraphs, lists, tables, images), más una versión
-Markdown `<nombre_pdf>.md` y una carpeta `<nombre_pdf>_images/` con las
-imágenes extraídas del PDF.
+Esto genera `JSONObtenidos/<nombre_pdf>.json` con todo lo que la librería
+detecta (headings, paragraphs, lists, tables, images), más una versión en
+Markdown y una carpeta `<nombre_pdf>_images/` con las imágenes del PDF.
 
 ### Paso 2 — Filtrar solo el texto
 
@@ -99,12 +98,12 @@ imágenes extraídas del PDF.
 python 2_filtrar_contenido_sin_tablas.py
 ```
 
-Lee el JSON crudo del PDF detectado y conserva únicamente los elementos
-`heading`, `paragraph` y `list` (descarta `table`, `image`, etc.).
+Lee el JSON crudo del PDF detectado y se queda solo con los elementos de tipo
+`heading`, `paragraph` y `list`. Las tablas se descartan aquí a propósito,
+porque en el paso 3 se vuelven a extraer con pdfplumber, que las saca mejor.
 
-**Salida esperada:** `JSONObtenidos/contenido_sin_tablas2.json`.
-Con `PLAN_3952-DSOF_1067.pdf` la consola reporta `Filtrado: 314 elementos`;
-con `DSOF_1067-O20F21.pdf`, 23 elementos.
+El archivo que se genera es `JSONObtenidos/contenido_sin_tablas2.json`. Con
+el PLAN la consola reporta 314 elementos filtrados; con el DSOF salen 23.
 
 ### Paso 3 — Re-extraer tablas e intercalar por posición real
 
@@ -112,12 +111,13 @@ con `DSOF_1067-O20F21.pdf`, 23 elementos.
 python 3_construir_documento_final_ordenado.py
 ```
 
-Re-extrae **todas** las tablas con `pdfplumber` (con su *bounding box*),
-elimina los párrafos/headings que en realidad son texto de una tabla, y
-ordena texto + tablas por **posición visual real** en cada página.
+Este paso vuelve a extraer todas las tablas con pdfplumber (esta vez con su
+bounding box), elimina los párrafos y headings que en realidad son texto que
+ya está dentro de una tabla, y ordena todo (texto y tablas juntos) por la
+posición en que aparece en cada página.
 
-**Salida esperada:** `JSONObtenidos/documento_final_ordenado2.json`.
-Reporte real con `PLAN_3952-DSOF_1067.pdf`:
+Genera `JSONObtenidos/documento_final_ordenado2.json`. Este fue el reporte
+real al correrlo con el PLAN:
 
 ```
 Tablas extraídas: 80
@@ -138,11 +138,13 @@ Duplicados eliminados: 280
 python aplanar_para_mongo_generico.py JSONObtenidos/documento_final_ordenado2.json JSONObtenidos/documento_para_mongo_generico.json
 ```
 
-Recibe la **entrada** y la **salida** como argumentos. Convierte el documento
-ordenado en un único diccionario jerárquico `clave: valor`, sin metadata
-(sin `type`, `id`, `page_number`…), con claves seguras para MongoDB.
+Este script recibe la entrada y la salida como argumentos. Convierte el
+documento ordenado en un solo diccionario jerárquico clave:valor, sin campos
+de metadata (nada de `type`, `id`, `page_number`), con las claves ya
+normalizadas para Mongo.
 
-Así se generaron los dos resultados incluidos en este repositorio:
+Los dos resultados que están en este repositorio se generaron con estos
+comandos:
 
 ```bash
 # PDF 1 (DSOF)
@@ -154,7 +156,7 @@ python aplanar_para_mongo_generico.py JSONObtenidos/documento_final_ordenado2.js
 
 ### Paso 5 (opcional) — Subir a MongoDB
 
-El JSON final es un único documento, listo para importarse tal cual:
+El JSON final es un solo documento, así que se puede importar directo:
 
 ```bash
 mongoimport --db practicum --collection asignaturas --file JSONObtenidos/documento_para_mongo_generico.json
@@ -162,81 +164,89 @@ mongoimport --db practicum --collection asignaturas --file JSONObtenidos/documen
 
 ### Procesar un segundo PDF
 
-Los pasos 2 y 3 escriben **siempre los mismos nombres de archivo**
-(`contenido_sin_tablas2.json`, `documento_final_ordenado2.json`), por lo que
-una segunda ejecución sobreescribiría la primera. Para conservar ambos
-resultados, **renombrar las salidas antes de procesar el siguiente PDF** —
-así se hizo en esta entrega: las salidas de `DSOF_1067-O20F21.pdf` se
-conservaron sin el sufijo `2` y las de `PLAN_3952-DSOF_1067.pdf` con él.
+Los pasos 2 y 3 escriben siempre los mismos nombres de archivo
+(`contenido_sin_tablas2.json` y `documento_final_ordenado2.json`), así que si
+se corre el flujo con otro PDF, la segunda corrida pisa a la primera. La
+solución es renombrar las salidas antes de procesar el siguiente PDF. Así se
+hizo en esta entrega: las salidas del DSOF se guardaron sin el sufijo 2 y las
+del PLAN con él.
 
 ## Cómo funciona (resumen)
 
 La explicación completa está en
-[`documentacion/flujo.md`](./documentacion/flujo.md); estas son las ideas
-clave:
+[`documentacion/flujo.md`](./documentacion/flujo.md). Acá va lo esencial.
 
-**Orden de lectura real (paso 3).** `opendataloader_pdf` da la posición del
-texto en coordenadas PDF (origen abajo-izquierda, Y crece hacia arriba) y
-`pdfplumber` da la de las tablas en su propio sistema (origen
-arriba-izquierda, `top` crece hacia abajo). Convirtiendo el bbox de la tabla
-con `y_top = page.height - top`, ambos quedan en el mismo sistema y basta
-ordenar cada página por Y descendente (con desempate por X) para reconstruir
-el orden en que se lee el documento, intercalando texto y tablas
-correctamente.
+El orden de lectura (paso 3). El problema es que opendataloader_pdf da la
+posición del texto en coordenadas PDF (el origen está abajo a la izquierda y
+la Y crece hacia arriba), mientras que pdfplumber da la posición de las
+tablas al revés (origen arriba a la izquierda, `top` crece hacia abajo). La
+solución fue convertir el bbox de cada tabla con
+`y_top = page.height - top`, con lo que texto y tablas quedan en el mismo
+sistema y se puede ordenar cada página de arriba hacia abajo. Así cada tabla
+queda intercalada justo donde va en el documento.
 
-**Duplicados (paso 3).** El texto que ya vive dentro de una tabla se detecta
-con 3 niveles de comparación por página: coincidencia exacta con una celda,
-contención en el texto concatenado de la tabla, y contención dentro de una
-celda individual. En `PLAN_3952-DSOF_1067.pdf` esto eliminó 280 duplicados.
+Los duplicados (paso 3). A veces opendataloader_pdf reporta como párrafo o
+heading un texto que en realidad es el contenido de una celda. Para no
+duplicar, cada texto se compara contra las tablas de su misma página en tres
+niveles: si coincide exacto con una celda, si está contenido en el texto
+completo de la tabla, o si está contenido dentro de una celda. En el PLAN
+esto eliminó 280 duplicados.
 
-**Tablas cortadas por página (paso 4).** Antes de interpretar las tablas, el
-aplanador las reconstruye: descarta títulos repetidos por el salto de página,
-pega el contenido que quedó separado de su título (caso típico: el título
-"Semana 6" queda solo al final de una tabla y sus datos caen en la
-siguiente), y fusiona las tablas-matriz partidas usando `column_number`.
+Las tablas cortadas por página (paso 4). Los PDF cortan las tablas al cambiar
+de página y pdfplumber las devuelve como tablas separadas. Antes de
+interpretarlas, el script las reconstruye: descarta los títulos que se
+repiten por el salto de página, pega el contenido que quedó separado de su
+título (el caso típico es que un título como "Semana 6" queda solo al final
+de una tabla y sus datos caen en la siguiente), y fusiona las tablas tipo
+matriz que quedaron partidas, usando el número de columna.
 
-**Interpretación de tablas (paso 4).** Dos estrategias: *tabla-matriz*
-(encabezados de columna reales, p. ej. horarios) se convierte en una lista de
-registros, heredando de la fila anterior las celdas combinadas (*rowspan*,
-p. ej. la columna "Componente"); *tabla-formulario* usa la regla padre-hijo:
-una fila de 1 celda (p. ej. "A. Datos básicos de la asignatura") es el padre
-de las filas siguientes, y cada fila de 2 celdas es un par `clave: valor`.
+La interpretación de tablas (paso 4). Hay dos casos. Si la tabla es una
+matriz (con encabezados de columna de verdad, como el horario de clases), se
+convierte en una lista de registros; cuando a una fila le falta la primera
+columna es porque en el PDF esa celda estaba combinada con la de arriba
+(rowspan, como pasa con la columna "Componente"), y se hereda el valor de la
+fila anterior. Si la tabla es tipo formulario, se aplica la regla padre-hijo:
+una fila de una sola celda (como "A. Datos básicos de la asignatura") es el
+padre de las filas que siguen, y cada fila de dos celdas es un par
+clave:valor.
 
-**Texto (paso 4).** Un heading o párrafo con el patrón `Etiqueta: valor`
-(p. ej. "ÁREA ACADÉMICA: Técnica") se convierte en un campo de la sección
-actual; un párrafo que termina en `:` o que es corto y precede a una
-tabla/lista se trata como título de sección (p. ej. "Fechas importantes:");
-el resto es contenido.
+El texto (paso 4). Un heading o párrafo con el patrón "Etiqueta: valor"
+(como "ÁREA ACADÉMICA: Técnica") se convierte en un campo de la sección
+actual. Un párrafo que termina en dos puntos, o que es corto y viene justo
+antes de una tabla o lista, se trata como título de sección (por ejemplo
+"Fechas importantes:"). El resto se guarda como contenido.
 
-**Claves seguras (paso 4).** `clean_key()` pasa las claves a snake_case sin
-tildes ni símbolos (los puntos rompen la notación de puntos de Mongo) y
-`add_unique()` evita perder datos: si una clave se repite, agrupa los valores
-en una lista en vez de sobrescribir.
+Las claves (paso 4). La función `clean_key()` normaliza solo las claves
+(nunca los valores): quita tildes, cambia cualquier símbolo por guión bajo y
+pasa todo a minúsculas. Y `add_unique()` evita perder datos: si una clave se
+repite, en lugar de sobrescribir agrupa los valores en una lista.
 
 ## Notas de replicabilidad
 
-- Ejecutar los scripts **desde la carpeta donde está el PDF**; las rutas de
+- Los scripts se ejecutan desde la carpeta donde está el PDF; las rutas de
   salida (`JSONObtenidos/...`) son relativas a la carpeta actual.
-- Los mensajes en consola de los pasos 2 y 3 muestran los nombres sin el
-  sufijo `2` (`contenido_sin_tablas.json`, `documento_final_ordenado.json`),
-  pero los archivos **realmente escritos** son `contenido_sin_tablas2.json` y
-  `documento_final_ordenado2.json`. El flujo entre pasos es consistente
-  (el paso 3 lee exactamente lo que escribe el paso 2).
-- `aplanar_para_mongo_generico.py` recibe las rutas de entrada y salida por
-  argumento, por lo que funciona igual en Windows, Linux y Mac.
-- El paso 1 falla si Java no está instalado o no está en el `PATH`.
+- Ojo con los mensajes en consola de los pasos 2 y 3: muestran los nombres
+  sin el sufijo 2 (`contenido_sin_tablas.json`,
+  `documento_final_ordenado.json`), pero los archivos que realmente se
+  escriben son `contenido_sin_tablas2.json` y
+  `documento_final_ordenado2.json`. El flujo entre pasos sí es consistente:
+  el paso 3 lee exactamente lo que escribe el paso 2.
+- `aplanar_para_mongo_generico.py` recibe las rutas por argumento, así que
+  funciona igual en Windows, Linux y Mac.
+- El paso 1 falla si Java no está instalado o no está en el PATH.
 
 ## Código
 
-Código completo de cada script, tal como se usó para generar los resultados
-de `JSONObtenidos/`. La explicación va antes de cada bloque.
+Este es el código de cada script, tal como se usó para generar los resultados
+de `JSONObtenidos/`. Antes de cada bloque hay una explicación corta.
 
 ### `scripts/_detectar_pdf.py`
 
-Auxiliar de los pasos 1–3. Si se pasa un PDF por argumento lo usa; si no,
-busca los `.pdf` de la carpeta actual (uno → lo usa; varios → menú numerado;
-ninguno → error). `nombre_base()` devuelve el nombre del archivo sin
-extensión, usado para nombrar las salidas del paso 1.
+Auxiliar que usan los pasos 1, 2 y 3. Si se pasa un PDF por argumento usa
+ese; si no, busca los `.pdf` de la carpeta actual: si hay uno lo toma, si hay
+varios muestra un menú y si no hay ninguno lanza un error. La función
+`nombre_base()` devuelve el nombre del archivo sin extensión, que sirve para
+nombrar las salidas del paso 1.
 
 ```python
 import sys
@@ -299,9 +309,9 @@ def nombre_base(ruta_pdf):
 
 ### `scripts/1_extraer_pdf_opendataloader.py` — Paso 1
 
-Crea `JSONObtenidos/` si no existe y llama a `opendataloader_pdf.convert()`
-para generar el JSON crudo con todo el contenido detectado, más la versión
-Markdown y las imágenes del PDF.
+Crea la carpeta `JSONObtenidos/` si no existe y llama a
+`opendataloader_pdf.convert()`, que genera el JSON crudo con todo el
+contenido detectado, la versión Markdown y las imágenes del PDF.
 
 ```python
 import os
@@ -326,8 +336,8 @@ print(f"Extracción completada → JSONObtenidos/{base}.json")
 
 ### `scripts/2_filtrar_contenido_sin_tablas.py` — Paso 2
 
-Localiza el JSON crudo del PDF detectado (`JSONObtenidos/<nombre_pdf>.json`)
-y conserva solo los elementos de texto (`heading`, `paragraph`, `list`).
+Busca el JSON crudo del PDF detectado (`JSONObtenidos/<nombre_pdf>.json`) y
+se queda solo con los elementos de texto: heading, paragraph y list.
 
 ```python
 import json
@@ -369,9 +379,10 @@ print(f"Filtrado: {len(elementos_filtrados)} elementos → JSONObtenidos/conteni
 
 ### `scripts/3_construir_documento_final_ordenado.py` — Paso 3
 
-Re-extrae las tablas con `pdfplumber` conservando su bounding box, limpia las
-celdas vacías, elimina el texto duplicado (3 niveles de comparación) y ordena
-todos los elementos por `(página, −Y, X)` — el orden de lectura real.
+Re-extrae las tablas con pdfplumber guardando su bounding box, limpia las
+celdas vacías, elimina el texto duplicado (los tres niveles de comparación) y
+ordena todos los elementos por página, Y descendente y X ascendente, que es
+el orden en que se lee el documento.
 
 ```python
 import json
@@ -544,10 +555,10 @@ print("=" * 50)
 
 ### `scripts/aplanar_para_mongo_generico.py` — Paso 4
 
-El paso final. Reconstruye las tablas cortadas por los saltos de página,
-interpreta cada tabla como matriz o como formulario padre-hijo, clasifica los
-párrafos en título/contenido, y arma un único diccionario jerárquico
-`clave: valor` con claves normalizadas para MongoDB. Uso:
+El paso final. Reconstruye las tablas que quedaron cortadas por los saltos de
+página, interpreta cada tabla como matriz o como formulario padre-hijo,
+clasifica los párrafos en título o contenido, y arma el diccionario
+clave:valor con las claves normalizadas para Mongo. Se usa así:
 `python aplanar_para_mongo_generico.py entrada.json salida.json`.
 
 ```python
@@ -978,7 +989,7 @@ if __name__ == "__main__":
 
 ---
 
-Documentación ampliada: [`documentacion/flujo.md`](./documentacion/flujo.md)
-(explicación detallada de cada paso y sus heurísticas) y
-[`documentacion/scripts.md`](./documentacion/scripts.md) (referencia de
-entradas/salidas de cada script).
+La documentación ampliada está en
+[`documentacion/flujo.md`](./documentacion/flujo.md) (explicación detallada
+de cada paso) y en [`documentacion/scripts.md`](./documentacion/scripts.md)
+(referencia de entradas y salidas de cada script).
