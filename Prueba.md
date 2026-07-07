@@ -47,14 +47,13 @@ que la notación de puntos de MongoDB funcione sin errores y asi los valores con
 Practicum1.2/
 ├── scripts/                       
 │   ├── _detectar_pdf.py               
-│   ├── 1_extraer_pdf_opendataloader.py    
+│   ├── 1_extraer_pdf_opendataloader.py   
 │   ├── 2_filtrar_contenido_sin_tablas.py  
 │   ├── 3_construir_documento_final_ordenado.py  
-│   ├── aplanar_para_mongo_generico.py     
-│   └── 4_aplanar_documento.py            
-├── pdfs_entrada/                 
+│   └── aplanar_para_mongo_generico.py     
+├── pdfs_entrada/                  
 ├── JSONObtenidos/                 
-├── documentacion/                 
+├── documentacion/                
 ├── requirements.txt
 └── README.md
 ```
