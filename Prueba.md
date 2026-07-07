@@ -27,7 +27,7 @@ generados se pueden encontrar en [`JSONObtenidos/`](./JSONObtenidos/):
 | Documento ordenado | `documento_final_ordenado.json` | `documento_final_ordenado2.json` |
 | Aplanado para MongoDB | `documento_final_ordenado1_para_mongo.json` | `documento_para_mongo_generico.json` |
 
-Ejemplo real del resultado final:
+Aqui tenemos un ejemplo real del resultado final:
 
 ```json
 {
@@ -40,7 +40,7 @@ Ejemplo real del resultado final:
 }
 ```
 
-Las claves quedan normalizadas es decir, sin tildes ni símbolos, para
+Como podemos ver, las claves quedan normalizadas es decir, sin tildes ni símbolos, para
 que la notación de puntos de MongoDB funcione sin errores y asi los valores conserven el texto original intacto.
 
 ## Estructura del repositorio
@@ -70,7 +70,7 @@ Practicum1.2/
 pip install -r requirements.txt
 ```
 
-(Instala `opendataloader_pdf` y `pdfplumber`; el resto es librería estándar.)
+(Se instala `opendataloader_pdf` y `pdfplumber`; el resto es librería estándar.)
 
 ## Proceso replicable paso a paso
 
