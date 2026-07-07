@@ -1,30 +1,31 @@
 # Practicum 1.2 — Extracción estructurada de PDF a JSON para MongoDB
 
-Flujo completo y **replicable** que toma un PDF académico (plan docente /
-diseño de asignatura), extrae todo su contenido, lo limpia, lo ordena según
-el orden de lectura real del documento y lo transforma en **un único
-diccionario jerárquico `clave: valor` listo para subir a MongoDB**.
+A continucacion se muestra el flujo completo y replicable que toma un archivo PDF, extrae todo su contenido, lo limpia, lo ordena según
+el orden de lectura del documento y lo transforma en un único
+diccionario jerárquico de tipo `clave: valor` listo para subir a MongoDB.
 
-Herramientas: [`opendataloader_pdf`](https://pypi.org/project/opendataloader-pdf/)
-(extracción inicial, requiere Java) y
-[`pdfplumber`](https://github.com/jsvine/pdfplumber) (re-extracción de tablas
+Las herramientas usadas fueron: 
+
+* [`opendataloader_pdf`](https://pypi.org/project/opendataloader-pdf/)
+(se usa para la extracción inicial y requiere Java).
+
+* [`pdfplumber`](https://github.com/jsvine/pdfplumber) (para la re-extracción de tablas
 con posición real).
 
 ## Resultados obtenidos
 
-El flujo se ejecutó sobre los **dos PDF facilitados por el docente tutor**
-(incluidos en [`pdfs_entrada/`](./pdfs_entrada/)). Todos los archivos
-generados están en [`JSONObtenidos/`](./JSONObtenidos/):
+El flujo se ejecutó sobre los dos PDF que se nos facilitaron
+(se encuentran en [`pdfs_entrada/`](./pdfs_entrada/)). Todos los archivos
+generados se pueden encontrar en [`JSONObtenidos/`](./JSONObtenidos/):
 
 | | `DSOF_1067-O20F21.pdf` | `PLAN_3952-DSOF_1067.pdf` |
 |---|---|---|
-| JSON crudo (paso 1) | `DSOF_1067-O20F21.json` (+ `.md`, 6 imágenes) | `PLAN_3952-DSOF_1067.json` (+ `.md`, 1 imagen) |
-| Solo texto (paso 2) | `contenido_sin_tablas.json` — 23 elementos | `contenido_sin_tablas2.json` — 314 elementos |
-| Documento ordenado (paso 3) | `documento_final_ordenado.json` — 28 elementos (12 headings, 7 párrafos, 5 tablas, 4 listas) | `documento_final_ordenado2.json` — 114 elementos (12 headings, 7 párrafos, **80 tablas**, 15 listas) |
-| Aplanado para MongoDB (paso 4) | `documento_final_ordenado1_para_mongo.json` — 11 secciones raíz | `documento_para_mongo_generico.json` — 13 secciones raíz |
+| JSON crudo | `DSOF_1067-O20F21.json` | `PLAN_3952-DSOF_1067.json` |
+| Solo texto | `contenido_sin_tablas.json` | `contenido_sin_tablas2.json` |
+| Documento ordenado | `documento_final_ordenado.json` | `documento_final_ordenado2.json` |
+| Aplanado para MongoDB | `documento_final_ordenado1_para_mongo.json` | `documento_para_mongo_generico.json` |
 
-Ejemplo real del resultado final (fragmento de
-`documento_final_ordenado1_para_mongo.json`):
+Ejemplo real del resultado final:
 
 ```json
 {
@@ -37,34 +38,32 @@ Ejemplo real del resultado final (fragmento de
 }
 ```
 
-Las **claves** quedan normalizadas (snake_case, sin tildes ni símbolos, para
-que la notación de puntos de MongoDB funcione sin errores) y los **valores**
-conservan el texto original intacto.
+Las claves quedan normalizadas es decir, sin tildes ni símbolos, para
+que la notación de puntos de MongoDB funcione sin errores y asi los valores conserven el texto original intacto.
 
 ## Estructura del repositorio
 
 ```
 Practicum1.2/
-├── scripts/                       Código del flujo (6 archivos .py)
-│   ├── _detectar_pdf.py               Auxiliar: detección/selección del PDF
-│   ├── 1_extraer_pdf_opendataloader.py    Paso 1: extracción cruda
-│   ├── 2_filtrar_contenido_sin_tablas.py  Paso 2: filtrar solo texto
-│   ├── 3_construir_documento_final_ordenado.py  Paso 3: tablas + orden real
-│   ├── aplanar_para_mongo_generico.py     Paso 4: aplanado clave:valor p/ Mongo
-│   └── 4_aplanar_documento.py             Conversor alternativo clave:valor
-├── pdfs_entrada/                  PDFs de origen facilitados por el tutor
-├── JSONObtenidos/                 Todas las salidas generadas (JSON, MD, imágenes)
-├── documentacion/                 Explicación ampliada del flujo y los scripts
+├── scripts/                       
+│   ├── _detectar_pdf.py               
+│   ├── 1_extraer_pdf_opendataloader.py    
+│   ├── 2_filtrar_contenido_sin_tablas.py  
+│   ├── 3_construir_documento_final_ordenado.py  
+│   ├── aplanar_para_mongo_generico.py     
+│   └── 4_aplanar_documento.py            
+├── pdfs_entrada/                 
+├── JSONObtenidos/                 
+├── documentacion/                 
 ├── requirements.txt
 └── README.md
 ```
 
 ## Requisitos e instalación
 
-1. **Python 3.10+** — verificar con `python --version`.
-2. **Java (JRE 8+)** instalado y en el `PATH` — lo necesita
-   `opendataloader_pdf` internamente. Verificar con `java -version`.
-3. Instalar las dependencias de Python:
+- Python 3.12+
+- Java instalado y en el `PATH` (es necesario para el `opendataloader_pdf`).
+- Dependencias de Python:
 
 ```bash
 pip install -r requirements.txt
@@ -223,11 +222,8 @@ en una lista en vez de sobrescribir.
   pero los archivos **realmente escritos** son `contenido_sin_tablas2.json` y
   `documento_final_ordenado2.json`. El flujo entre pasos es consistente
   (el paso 3 lee exactamente lo que escribe el paso 2).
-- `4_aplanar_documento.py` (conversor alternativo) tiene su ruta de entrada
-  escrita con backslash de Windows (`JSONObtenidos\documento_final_ordenado2.json`);
-  en Linux/Mac hay que cambiarla a `/`. Los resultados de MongoDB de esta
-  entrega se generaron con `aplanar_para_mongo_generico.py`, que recibe las
-  rutas por argumento y funciona en cualquier sistema.
+- `aplanar_para_mongo_generico.py` recibe las rutas de entrada y salida por
+  argumento, por lo que funciona igual en Windows, Linux y Mac.
 - El paso 1 falla si Java no está instalado o no está en el `PATH`.
 
 ## Código
@@ -978,189 +974,6 @@ if __name__ == "__main__":
         json.dump(transformar(data), f, ensure_ascii=False, indent=2)
 
     print(salida_path)
-```
-
-### `scripts/4_aplanar_documento.py` — Conversor alternativo
-
-Versión previa del aplanado clave:valor (`SmartJSONConverter`): interpreta
-las tablas fila por fila según su número de celdas y agrupa párrafos,
-encabezados y listas del documento ordenado. Se conserva en el repositorio
-como alternativa; los resultados de MongoDB incluidos se generaron con
-`aplanar_para_mongo_generico.py`.
-
-```python
-import json
-import re
-import unicodedata
-from pathlib import Path
-from datetime import datetime
-
-
-class SmartJSONConverter:
-    
-    def __init__(self, archivo_json: str):
-        self.archivo_json = archivo_json
-        self.datos_originales = None
-        self.datos_planos = {}
-        self.claves_usadas = set()
-    
-    def cargar_json(self) -> bool:
-        try:
-            with open(self.archivo_json, 'r', encoding='utf-8') as f:
-                self.datos_originales = json.load(f)
-            return True
-        except Exception:
-            return False
-    
-    def normalizar_clave(self, texto: str) -> str:
-        if not isinstance(texto, str):
-            return str(texto).lower()
-        
-        texto = re.sub(r'\s+', ' ', texto).strip().lower()
-        nfd = unicodedata.normalize('NFD', texto)
-        texto = ''.join(c for c in nfd if unicodedata.category(c) != 'Mn')
-        texto = re.sub(r'[^a-z0-9ñ]+', '_', texto)
-        texto = texto.strip('_')
-        texto = re.sub(r'_+', '_', texto)
-        
-        clave_final = texto
-        contador = 1
-        original = texto
-        
-        while clave_final in self.claves_usadas:
-            clave_final = f"{original}_{contador}"
-            contador += 1
-        
-        self.claves_usadas.add(clave_final)
-        return clave_final
-    
-    def limpiar(self, valor: str) -> str:
-        if not isinstance(valor, str):
-            return str(valor)
-        return re.sub(r'\s+', ' ', valor).replace('\n', ' ').strip()
-    
-    def detectar_marcador(self, texto: str) -> bool:
-        return texto.lower().strip() in ['x', '✓']
-    
-    def procesar_tabla(self, tabla: dict) -> dict:
-        resultado = {}
-        filas = tabla.get('rows', [])
-        
-        if not filas:
-            return resultado
-        
-        for idx, fila in enumerate(filas):
-            cells = fila.get('cells', [])
-            contenidos = [self.limpiar(c.get('content', '')) for c in cells if c.get('content')]
-            
-            if not contenidos:
-                continue
-            
-            if len(contenidos) == 1:
-                contenido = contenidos[0]
-                if len(contenido) >= 3 and not self.detectar_marcador(contenido):
-                    clave = self.normalizar_clave(contenido)
-                    resultado[clave] = contenido
-            
-            elif len(contenidos) == 2:
-                clave_texto, valor_texto = contenidos[0], contenidos[1]
-                
-                if self.detectar_marcador(valor_texto) and len(clave_texto) >= 3:
-                    clave = self.normalizar_clave(clave_texto)
-                    resultado[clave] = clave_texto
-                
-                elif (len(clave_texto) >= 3 and len(valor_texto) >= 2 and 
-                      not self.detectar_marcador(clave_texto) and 
-                      not self.detectar_marcador(valor_texto)):
-                    clave = self.normalizar_clave(clave_texto)
-                    resultado[clave] = valor_texto
-            
-            elif len(contenidos) > 2:
-                primer = contenidos[0]
-                if len(primer) >= 3 and not self.detectar_marcador(primer):
-                    if len(contenidos) == 3 and self.detectar_marcador(contenidos[-1]):
-                        clave = self.normalizar_clave(primer)
-                        resultado[clave] = primer
-                    elif not all(self.detectar_marcador(c) for c in contenidos[1:]):
-                        clave = self.normalizar_clave(primer)
-                        valor = ' '.join(contenidos[1:])
-                        resultado[clave] = valor
-        
-        return resultado
-    
-    def procesar(self) -> dict:
-        if not self.cargar_json():
-            return {}
-        
-        self.datos_planos['_metadata'] = {
-            'archivo_original': self.datos_originales.get('file_name', ''),
-            'fecha_procesamiento': datetime.now().isoformat(),
-            'total_elementos': self.datos_originales.get('total_elements', 0)
-        }
-        
-        elementos = self.datos_originales.get('elements', [])
-        parrafos = []
-        encabezados = []
-        listas = {}
-        
-        for elemento in elementos:
-            tipo = elemento.get('type', '')
-            
-            if tipo == 'table':
-                tabla_datos = self.procesar_tabla(elemento)
-                self.datos_planos.update(tabla_datos)
-            
-            elif tipo == 'paragraph':
-                contenido = self.limpiar(elemento.get('content', ''))
-                if len(contenido) >= 5:
-                    parrafos.append(contenido)
-            
-            elif tipo == 'heading':
-                contenido = self.limpiar(elemento.get('content', ''))
-                if len(contenido) >= 3:
-                    encabezados.append(contenido)
-            
-            elif tipo == 'list':
-                items = [self.limpiar(i.get('content', '')) 
-                        for i in elemento.get('items', []) if i.get('content')]
-                if items:
-                    elemento_id = elemento.get('id', len(listas))
-                    listas[f"lista_{elemento_id}"] = items
-        
-        if parrafos:
-            self.datos_planos['parrafos'] = parrafos
-        if encabezados:
-            self.datos_planos['encabezados'] = encabezados
-        
-        self.datos_planos.update(listas)
-        
-        return self.datos_planos
-    
-    def guardar(self, archivo_salida: str = None) -> str:
-        if not archivo_salida:
-            ruta = Path(self.archivo_json)
-            ## Aca esta para cambiar el nombre 
-            archivo_salida = str(ruta.parent / f"{ruta.stem}_PLANO2.json")
-        
-        try:
-            with open(archivo_salida, 'w', encoding='utf-8') as f:
-                json.dump(self.datos_planos, f, ensure_ascii=False, indent=2)
-            return archivo_salida
-        except Exception:
-            return None
-    
-    def transformar(self) -> str:
-        self.procesar()
-        return self.guardar()
-
-
-if __name__ == "__main__":
-    archivo_entrada = "JSONObtenidos\documento_final_ordenado2.json"
-    convertidor = SmartJSONConverter(archivo_entrada)
-    archivo_salida = convertidor.transformar()
-    
-    if archivo_salida:
-        print(f"✓ {Path(archivo_salida).name}")
 ```
 
 ---
