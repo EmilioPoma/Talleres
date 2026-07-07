@@ -989,4 +989,4 @@ if __name__ == "__main__":
 
 La documentación ampliada y a mejor detalle está en
 [`documentacion/flujo.md`](./documentacion/flujo.md) y en [`documentacion/scripts.md`](./documentacion/scripts.md)
-hay referencia de entradas y salidas de cada script).
+hay referencia de entradas y salidas de cada script.
