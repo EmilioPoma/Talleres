@@ -1,4 +1,4 @@
-# Practicum 1.2 — Extracción estructurada de PDF a JSON para MongoDB
+# Practicum 1.2 — Extracción estructurada de un PDF a JSON
 
 A continucacion se muestra el flujo completo y replicable que toma un archivo PDF, extrae todo su contenido, lo limpia, lo ordena según
 el orden de lectura del documento y lo transforma en un único
@@ -8,7 +8,7 @@ Las herramientas usadas fueron:
 
 * `opendataloader_pdf`:
 Se usa para la extracción inicial y requiere Java).
-(https://pypi.org/project/opendataloader-pdf/)
+([https://pypi.org/project/opendataloader-pdf/](https://github.com/opendataloader-project/opendataloader-pdf))
 
 * `pdfplumber`:Para la re-extracción de tablas
 con posición real.
