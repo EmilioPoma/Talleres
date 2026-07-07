@@ -11,7 +11,7 @@ Se usa para la extracción inicial y requiere Java).
 (https://github.com/opendataloader-project/opendataloader-pdf))
 
 * **pdfplumber**: Para la re-extracción de tablas
-con posición real.
+con su posición real.
 (https://github.com/jsvine/pdfplumber) 
 
 ## Resultados obtenidos
