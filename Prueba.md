@@ -6,7 +6,7 @@ diccionario jerárquico de tipo `clave: valor` listo para subir a MongoDB.
 
 Las herramientas usadas fueron: 
 
-* [`opendataloader_pdf`](https://pypi.org/project/opendataloader-pdf/)
+* `opendataloader_pdf`(https://pypi.org/project/opendataloader-pdf/)
 (se usa para la extracción inicial y requiere Java).
 
 * [`pdfplumber`](https://github.com/jsvine/pdfplumber) (para la re-extracción de tablas
