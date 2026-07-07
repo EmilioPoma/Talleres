@@ -1,4 +1,4 @@
-# Practicum 1.2 — Extracción estructurada de PDF a JSON para MongoDB
+#Practicum 1.2 — Extracción estructurada de PDF a JSON para MongoDB
 
 Flujo completo y **replicable** que toma un PDF académico (plan docente /
 diseño de asignatura), extrae todo su contenido, lo limpia, lo ordena según
