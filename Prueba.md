@@ -174,7 +174,7 @@ del PLAN con él.
 La explicación completa está en
 [`documentacion/flujo.md`](./documentacion/flujo.md). Acá va lo esencial.
 
-El orden de lectura (paso 3). El problema es que opendataloader_pdf da la
+* El orden de lectura (paso 3). El problema es que opendataloader_pdf da la
 posición del texto en coordenadas PDF (el origen está abajo a la izquierda y
 la Y crece hacia arriba), mientras que pdfplumber da la posición de las
 tablas al revés (origen arriba a la izquierda, `top` crece hacia abajo). La
@@ -183,14 +183,14 @@ solución fue convertir el bbox de cada tabla con
 sistema y se puede ordenar cada página de arriba hacia abajo. Así cada tabla
 queda intercalada justo donde va en el documento.
 
-Los duplicados (paso 3). A veces opendataloader_pdf reporta como párrafo o
+* Los duplicados (paso 3). A veces opendataloader_pdf reporta como párrafo o
 heading un texto que en realidad es el contenido de una celda. Para no
 duplicar, cada texto se compara contra las tablas de su misma página en tres
 niveles: si coincide exacto con una celda, si está contenido en el texto
 completo de la tabla, o si está contenido dentro de una celda. En el PLAN
 esto eliminó 280 duplicados.
 
-Las tablas cortadas por página (paso 4). Los PDF cortan las tablas al cambiar
+* Las tablas cortadas por página (paso 4). Los PDF cortan las tablas al cambiar
 de página y pdfplumber las devuelve a manera de tablas separadas. Antes de
 interpretarlas, el script las reconstruye, descarta los títulos que se
 repiten por el salto de página, pega el contenido que quedó separado de su
@@ -198,7 +198,7 @@ título (el caso típico es que un título como "Semana 6" queda solo al final
 de una tabla y sus datos caen en la siguiente), y fusiona las tablas tipo
 matriz que quedaron partidas, usando el número de columna.
 
-La interpretación de tablas (paso 4). Aqui hay dos casos. Si la tabla es una
+* La interpretación de tablas (paso 4). Aqui hay dos casos. Si la tabla es una
 matriz (con encabezados de columna de verdad, como el horario de clases), se
 convierte en una lista de registros; cuando a una fila le falta la primera
 columna es porque en el PDF esa celda estaba combinada con la de arriba
@@ -208,13 +208,13 @@ una fila de una sola celda (como "A. Datos básicos de la asignatura") es el
 padre de las filas que siguen, y cada fila de dos celdas es un par
 clave:valor.
 
-El texto (paso 4). Un heading o párrafo con el patrón "Etiqueta: valor"
+* El texto (paso 4). Un heading o párrafo con el patrón "Etiqueta: valor"
 (como "ÁREA ACADÉMICA: Técnica") se convierte en un campo de la sección
 actual. Un párrafo que termina en dos puntos, o que es corto y viene justo
 antes de una tabla o lista, se trata como título de sección (por ejemplo
 "Fechas importantes:"). El resto se guarda como contenido.
 
-Las claves (paso 4). La función `clean_key()` normaliza solo las claves
+* Las claves (paso 4). La función `clean_key()` normaliza solo las claves
 (nunca los valores): quita las tildes, cambia cualquier símbolo por guión bajo y
 pasa todo a minúsculas. Y `add_unique()` evita perder datos: si una clave se
 repite, en lugar de sobrescribir agrupa los valores en una lista.
